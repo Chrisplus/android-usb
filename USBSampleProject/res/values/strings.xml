@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	
+    <!-- Main Class (USBSampleProject) Strings -->
+    <string name="hello">Hello World, USBSampleProjectActivity!</string>
+    <string name="app_name">USB Project</string>
+    
+    <!-- Connected Class Strings -->
+    <string name="connection_text">Connection Established!</string>
+    <string name="connected">Connected</string>
+    
+    <!-- Menu Strings -->
+    <string name="menu_refresh">Refresh</string>
+
+</resources>
