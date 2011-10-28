@@ -7,13 +7,16 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Scanner;
 
 public class Connection {
 
 	public static void main(String[] args) throws IOException {
 
 		System.out.println("Connection.main()");
-
+		
+		execAdb();
+		
 		Socket echoSocket = null;
 		PrintStream out = null;
 		BufferedReader in = null;
@@ -32,13 +35,12 @@ public class Connection {
 			System.exit(1);
 		}
 
-		BufferedReader stdIn = new BufferedReader(new InputStreamReader(
-				System.in));
+		BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 		// String userInput;
 		System.out.println("connected!!");
-		int counter = 0;
 
-		// TODO monitor
+//		int counter = 0;
+//		TODO monitor
 //		while (true) {
 //			counter++;
 //			// out.println(counter);
@@ -48,6 +50,31 @@ public class Connection {
 //				System.out.println("echo: " + in.readLine());
 //			}
 //		}
-	}
-}
+		
+		String line = null;
+		while((line = in.readLine()) != null) {
+			System.out.println("Got something!: " + line);
+		}
+		
+		//out.println("testing output to input");
+		
+		out.close();
+		in.close();
+		echoSocket.close();
+	} // end main()
+	
+	private static void execAdb() {
+		// run the adb bride
+		try {
+			Process p = Runtime.getRuntime().exec("/Users/rachel/Documents/sdev/android-sdk/platform-tools/adb forward tcp:38300 tcp:38300");
+			Scanner sc = new Scanner(p.getErrorStream());
+			if(sc.hasNext()) {
+				while(sc.hasNext()) System.out.println(sc.next());
+				System.out.println("Cannot start the Android debug bridge");
+			}
+		} catch(Exception e) {
+			System.out.println(e.toString());
+		}
+	} // end private void execAdb()
+} // end class Connection
 

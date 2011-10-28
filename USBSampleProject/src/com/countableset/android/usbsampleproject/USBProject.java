@@ -93,8 +93,10 @@ public class USBProject extends Activity implements OnClickListener {
 				//		print out success
 				connectionStatus="Connection was succesful!";
 				mHandler.post(showConnectionStatus);
-
-				startActivity(i);
+				
+				Globals.socketOut.println("Hey you!");
+				
+				//startActivity(i);
 			}
 		}
 	};
