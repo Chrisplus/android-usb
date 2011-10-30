@@ -1,10 +1,14 @@
 package com.countableset.android.usbsampleproject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import android.app.Activity;
@@ -14,6 +18,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +29,7 @@ public class USBProject extends Activity implements OnClickListener {
 		public static boolean connected;
 		public static Scanner socketIn;
 		public static PrintWriter socketOut;
+		public static BufferedReader inBuff;
 	}
 	
 	public static final String TAG="Connection";
@@ -30,6 +37,7 @@ public class USBProject extends Activity implements OnClickListener {
 	Intent i=null;
 	TextView tv=null;
 	private String connectionStatus=null;
+	private List<String> stringList = null;
 	private Handler mHandler=null;
 	ServerSocket server=null;
 
@@ -72,6 +80,7 @@ public class USBProject extends Activity implements OnClickListener {
 				client = server.accept();
 				Globals.socketIn=new Scanner(client.getInputStream());
 				Globals.socketOut = new PrintWriter(client.getOutputStream(), true);
+				Globals.inBuff = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			} catch (SocketTimeoutException e) {
 				// print out TIMEOUT
 				connectionStatus="Connection has timed out! Please try again";
@@ -94,10 +103,40 @@ public class USBProject extends Activity implements OnClickListener {
 				connectionStatus="Connection was succesful!";
 				mHandler.post(showConnectionStatus);
 				
-				Globals.socketOut.println("Hey you!");
+//				Globals.socketOut.println("Hey you!");
 				
-				//startActivity(i);
+				try {
+					connected();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+//				startActivity(i);
 			}
+		}
+		
+		public void connected() throws IOException {
+			String line = null;
+			stringList = new ArrayList<String>();
+
+			while((line = Globals.inBuff.readLine()) != null) {
+				stringList.add(line);
+			}
+			
+			mHandler.post(showListView);
+		}
+	};
+	
+	/**
+	 * Should show the list view of suggestions
+	 */
+	private Runnable showListView = new Runnable() {
+		public void run() {
+			// List view stuff
+			ListView lv = new ListView(USBProject.this);
+			lv.setAdapter(new ArrayAdapter<String>(USBProject.this, R.layout.connected, stringList));
+			setContentView(lv);
 		}
 	};
 

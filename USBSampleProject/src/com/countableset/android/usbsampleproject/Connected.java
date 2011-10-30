@@ -1,14 +1,13 @@
 package com.countableset.android.usbsampleproject;
 
-import com.countableset.android.usbsampleproject.USBProject.Globals;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
+
+import com.countableset.android.usbsampleproject.USBProject.Globals;
 
 public class Connected extends Activity {
 	
@@ -18,6 +17,8 @@ public class Connected extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.connected);
+		
+		//Globals.socketOut.println("Hey you!");
 		
 //		while(true) {
 //			if(Globals.socketIn.hasNext()) {
