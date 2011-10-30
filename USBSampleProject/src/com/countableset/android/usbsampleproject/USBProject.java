@@ -1,18 +1,14 @@
 package com.countableset.android.usbsampleproject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -20,26 +16,29 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class USBProject extends Activity implements OnClickListener {
-
+	/**
+	 * Class that deals with variables dealing with the connection process.
+	 * I replaces socketIn with an BufferedReader instead of a Scanner 
+	 * since it was providing results.
+	 * socketOut - variable to print out to the socket
+	 * socketIn - variable to receive input from socket 
+	 */
 	public static class Globals {
 		public static boolean connected;
-		public static Scanner socketIn;
 		public static PrintWriter socketOut;
-		public static BufferedReader inBuff;
+		public static BufferedReader socketIn;
 	}
 	
-	public static final String TAG="Connection";
-	public static final int TIMEOUT=10;
-	Intent i=null;
-	TextView tv=null;
-	private String connectionStatus=null;
+	public static final String TAG = "USBProject";
+	public static final int TIMEOUT = 10;
+	private String connectionStatus = null;
 	private List<String> stringList = null;
-	private Handler mHandler=null;
-	ServerSocket server=null;
+	private Handler mHandler = null;
+	private ServerSocket server = null;
+	private Socket client = null;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -50,15 +49,16 @@ public class USBProject extends Activity implements OnClickListener {
 		View connectButton = findViewById(R.id.connect_button);
 		connectButton.setOnClickListener(this);
 
-		i = new Intent(this, Connected.class);
-		mHandler=new Handler();
+		mHandler = new Handler();
 	}
 
+	/**
+	 * The function that deals with the button click to connect via usb
+	 */
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.connect_button:
-				//tv = (TextView) findViewById(R.id.connection_text);
 				//initialize server socket in a new separate thread
 				new Thread(initializeConnection).start();
 				String msg="Attempting to connect...";
@@ -67,69 +67,51 @@ public class USBProject extends Activity implements OnClickListener {
 		}
 	}
 
+	/**
+	 * Runs the thread to deals with input and hopefully output of the usb 
+	 * connection. Make sure that ADB port forwarding is running on the
+	 * machine that you want to connect to.
+	 * abd forward tcp:38300 tcp:38300
+	 * To call this thread, use the command:
+	 * new Thread(initializeConnection).start();
+	 */
 	private Runnable initializeConnection = new Thread() {
 		public void run() {
-
-			Socket client=null;
 			// initialize server socket
-			try{
+			try {
 				server = new ServerSocket(38300);
-				server.setSoTimeout(TIMEOUT*1000);
-
-				//attempt to accept a connection
-				client = server.accept();
-				Globals.socketIn=new Scanner(client.getInputStream());
-				Globals.socketOut = new PrintWriter(client.getOutputStream(), true);
-				Globals.inBuff = new BufferedReader(new InputStreamReader(client.getInputStream()));
-			} catch (SocketTimeoutException e) {
-				// print out TIMEOUT
-				connectionStatus="Connection has timed out! Please try again";
+				Log.d(TAG, "waiting for connection");
+				while(true) {
+					//listen for incoming clients
+					client = server.accept();
+					try {
+						Globals.socketIn = new BufferedReader(new InputStreamReader(client.getInputStream()));
+						Globals.socketOut = new PrintWriter(client.getOutputStream(), true);
+						String line = null;
+						stringList = new ArrayList<String>();
+						// reading in the input from the usb socket
+						while((line = Globals.socketIn.readLine()) != null) {
+							stringList.add(line);
+						}
+						// show the input from usb as a list view in the activity
+						mHandler.post(showListView);
+					} catch (Exception e) {
+						Log.d(TAG, "lost client");
+						e.printStackTrace();
+					} // try/catch
+				} // while(true)
+			} catch (Exception e) {
+				connectionStatus = "error, disconnected";
 				mHandler.post(showConnectionStatus);
-			} catch (IOException e) {
-				Log.e(TAG, ""+e);
-			} finally {
-				//close the server socket
-				try {
-					if (server!=null)
-						server.close();
-				} catch (IOException ec) {
-					Log.e(TAG, "Cannot close server socket"+ec);
-				}
-			}
-
-			if (client!=null) {
-				Globals.connected=true;
-				//		print out success
-				connectionStatus="Connection was succesful!";
-				mHandler.post(showConnectionStatus);
-				
-//				Globals.socketOut.println("Hey you!");
-				
-				try {
-					connected();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-//				startActivity(i);
-			}
-		}
-		
-		public void connected() throws IOException {
-			String line = null;
-			stringList = new ArrayList<String>();
-
-			while((line = Globals.inBuff.readLine()) != null) {
-				stringList.add(line);
-			}
-			
-			mHandler.post(showListView);
-		}
+				Log.d(TAG, "error, disconnected");
+				e.printStackTrace();
+			} // try/catch
+		} // end run()
 	};
 	
 	/**
-	 * Should show the list view of suggestions
+	 * Shows a list view of of the input from socketIn
+	 * called in initializeConnection thread
 	 */
 	private Runnable showListView = new Runnable() {
 		public void run() {

@@ -3,3 +3,7 @@ USB/bin
 USBSampleProject/.classpath
 USBSampleProject/bin
 USBSampleProject/gen
+USBSampleProject/src/com/countableset/android/usbsampleproject/USBSocketService.java
+
+
+
