@@ -6,24 +6,45 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Date;
 import java.util.Scanner;
 
 public class USBServer {
 
+	public static Socket echoSocket = null;
+	public static PrintStream out = null;
+	public static BufferedReader in = null;
+	public static String line = null;
+	public static boolean send = true;
+	private static int portNumber = 38301;
+	
 	public static void main(String[] args) throws IOException {
 
 		System.out.println("Connection.main()");
 		
 		execAdb();
 		
-		Socket echoSocket = null;
-		PrintStream out = null;
-		BufferedReader in = null;
+		connect();
+	
+		for(int i = 0; i <= 10; i++) {
+			out.println("List Space: " + i);
+			out.flush();
+		}
+		out.flush();
 
+		
+		while((line = in.readLine()) != null) {
+			System.out.println("Server> " + line);
+		}
+		
+		disconnect();
+		
+	} // end main()
+	
+	
+	private static void connect() {
 		try {
-			echoSocket = new Socket("localhost", 38300);
-			out = new PrintStream(echoSocket.getOutputStream());
+			echoSocket = new Socket("localhost", portNumber);
+			out = new PrintStream(echoSocket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(
 					echoSocket.getInputStream()));
 		} catch (UnknownHostException e) {
@@ -34,47 +55,19 @@ public class USBServer {
 					+ "the connection to: localhost.");
 			System.exit(1);
 		}
-
-		BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-		// String userInput;
-		System.out.println("connected!!");
-
-//		int counter = 0;
-//		TODO monitor
-//		while (true) {
-//			counter++;
-//			// out.println(counter);
-//			if (counter % 1000 == 0) {
-//				out.println("update" + new Date().getSeconds());
-//				counter = 1;
-//				System.out.println("echo: " + in.readLine());
-//			}
-//		}
-		
-//		String line = null;
-//		while((line = in.readLine()) != null) {
-//			System.out.println("Got something!: " + line);
-//		}
-		
-		for(int i = 0; i <= 5; i++) {
-			out.println("List Space: " + i);
-		}
-		
-//		out.println("List Space 1");
-//		out.println("List Space 2");
-//		out.println("List Space 3");
-//		
-//		out.println("testing output to input");
-		
+		System.out.println("connected!");
+	}
+	
+	private static void disconnect() throws IOException {
 		out.close();
 		in.close();
 		echoSocket.close();
-	} // end main()
+	}
 	
 	private static void execAdb() {
 		// run the adb bride
 		try {
-			Process p = Runtime.getRuntime().exec("/Users/rachel/Documents/sdev/android-sdk/platform-tools/adb forward tcp:38300 tcp:38300");
+			Process p = Runtime.getRuntime().exec("/Users/rachel/Documents/sdev/android-sdk/platform-tools/adb forward tcp:" + portNumber + " tcp:" + portNumber );
 			Scanner sc = new Scanner(p.getErrorStream());
 			if(sc.hasNext()) {
 				while(sc.hasNext()) System.out.println(sc.next());
